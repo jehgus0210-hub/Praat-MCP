@@ -1,0 +1,130 @@
+form Arguments
+  sentence audio_path none
+  sentence output_file none
+endform
+
+frequency = 440
+duration  = 2.0
+sr        = 44100
+
+# ── 1. 사인파 생성 & WAV 저장 ────────────────────────────────────
+sound = Create Sound from formula: "sine440", 1, 0, duration, sr,
+    ... "0.5 * sin(2 * pi * frequency * x)"
+Save as WAV file: "C:\Users\user\Desktop\mcp-praat\result\sine440.wav"
+
+# ── 2. 기본 정보 ────────────────────────────────────────────────
+selectObject: sound
+dur_val       = Get total duration
+intensity_val = Get intensity (dB)
+rms_val       = Get root-mean-square: 0, 0
+
+# ── 3. 피치 분석 ─────────────────────────────────────────────────
+selectObject: sound
+pitch   = To Pitch: 0, 75, 600
+f0_mean = Get mean:               0, 0, "Hertz"
+f0_min  = Get minimum:            0, 0, "Hertz", "Parabolic"
+f0_max  = Get maximum:            0, 0, "Hertz", "Parabolic"
+f0_sd   = Get standard deviation: 0, 0, "Hertz"
+
+# ── 4. 포먼트 분석 ───────────────────────────────────────────────
+selectObject: sound
+formant = To Formant (burg): 0, 5, 5500, 0.025, 50
+f1 = Get mean: 1, 0, 0, "Hertz"
+f2 = Get mean: 2, 0, 0, "Hertz"
+f3 = Get mean: 3, 0, 0, "Hertz"
+
+# ── 5. 스펙트럼 밴드 에너지 ──────────────────────────────────────
+selectObject: sound
+spectrum    = To Spectrum: "yes"
+band_energy = Get band energy: 430, 450
+
+# ── 6. 노트북 문서 ───────────────────────────────────────────────
+nl$ = newline$
+t$  = "    "
+q$  = chr$(34)
+
+nb$ = "============================================================" + nl$
+nb$ = nb$ + "  PRAAT NOTEBOOK — 440 Hz 사인파 음성 분석" + nl$
+nb$ = nb$ + "============================================================" + nl$
+nb$ = nb$ + nl$
+
+nb$ = nb$ + "[텍스트] 1. 개요" + nl$
+nb$ = nb$ + "------------------------------------------------------------" + nl$
+nb$ = nb$ + "이 노트북은 440 Hz (A4 음) 사인파를 Praat으로 생성하고" + nl$
+nb$ = nb$ + "피치 · 포먼트 · 스펙트럼을 단계별로 분석합니다." + nl$
+nb$ = nb$ + "저장된 WAV : sine440.wav  (2초, 44100 Hz, mono, 0.5 진폭)" + nl$
+nb$ = nb$ + nl$
+
+nb$ = nb$ + "[스크립트] 2. 사인파 생성" + nl$
+nb$ = nb$ + "------------------------------------------------------------" + nl$
+nb$ = nb$ + t$ + "sound = Create Sound from formula: " + q$ + "sine440" + q$ + ", 1, 0, 2.0, 44100," + nl$
+nb$ = nb$ + t$ + "    ... " + q$ + "0.5 * sin(2 * pi * 440 * x)" + q$ + nl$
+nb$ = nb$ + t$ + "Save as WAV file: " + q$ + "sine440.wav" + q$ + nl$
+nb$ = nb$ + nl$
+
+nb$ = nb$ + "[출력] 2. 기본 정보" + nl$
+nb$ = nb$ + "------------------------------------------------------------" + nl$
+nb$ = nb$ + t$ + "주파수       : " + string$(frequency)       + " Hz  (A4)" + nl$
+nb$ = nb$ + t$ + "지속 시간    : " + string$(dur_val)         + " 초"       + nl$
+nb$ = nb$ + t$ + "샘플링레이트  : " + string$(sr)             + " Hz"       + nl$
+nb$ = nb$ + t$ + "RMS 진폭     : " + fixed$(rms_val, 6)       + " Pa"       + nl$
+nb$ = nb$ + t$ + "강도         : " + fixed$(intensity_val, 4) + " dB"       + nl$
+nb$ = nb$ + nl$
+
+nb$ = nb$ + "[스크립트] 3. 피치 분석" + nl$
+nb$ = nb$ + "------------------------------------------------------------" + nl$
+nb$ = nb$ + t$ + "pitch   = To Pitch: 0, 75, 600" + nl$
+nb$ = nb$ + t$ + "f0_mean = Get mean:               0, 0, " + q$ + "Hertz" + q$ + nl$
+nb$ = nb$ + t$ + "f0_min  = Get minimum:            0, 0, " + q$ + "Hertz" + q$ + ", " + q$ + "Parabolic" + q$ + nl$
+nb$ = nb$ + t$ + "f0_max  = Get maximum:            0, 0, " + q$ + "Hertz" + q$ + ", " + q$ + "Parabolic" + q$ + nl$
+nb$ = nb$ + t$ + "f0_sd   = Get standard deviation: 0, 0, " + q$ + "Hertz" + q$ + nl$
+nb$ = nb$ + nl$
+
+nb$ = nb$ + "[출력] 3. 피치 결과" + nl$
+nb$ = nb$ + "------------------------------------------------------------" + nl$
+nb$ = nb$ + t$ + "평균 F0     : " + fixed$(f0_mean, 6) + " Hz" + nl$
+nb$ = nb$ + t$ + "최소 F0     : " + fixed$(f0_min,  4) + " Hz" + nl$
+nb$ = nb$ + t$ + "최대 F0     : " + fixed$(f0_max,  4) + " Hz" + nl$
+nb$ = nb$ + t$ + "F0 표준편차  : " + fixed$(f0_sd,  8) + " Hz  ← 순수 사인파 → 거의 0" + nl$
+nb$ = nb$ + nl$
+
+nb$ = nb$ + "[스크립트] 4. 포먼트 분석" + nl$
+nb$ = nb$ + "------------------------------------------------------------" + nl$
+nb$ = nb$ + t$ + "formant = To Formant (burg): 0, 5, 5500, 0.025, 50" + nl$
+nb$ = nb$ + t$ + "f1 = Get mean: 1, 0, 0, " + q$ + "Hertz" + q$ + nl$
+nb$ = nb$ + t$ + "f2 = Get mean: 2, 0, 0, " + q$ + "Hertz" + q$ + nl$
+nb$ = nb$ + t$ + "f3 = Get mean: 3, 0, 0, " + q$ + "Hertz" + q$ + nl$
+nb$ = nb$ + nl$
+
+nb$ = nb$ + "[출력] 4. 포먼트 결과" + nl$
+nb$ = nb$ + "------------------------------------------------------------" + nl$
+nb$ = nb$ + t$ + "F1 (제1포먼트) : " + fixed$(f1, 2) + " Hz" + nl$
+nb$ = nb$ + t$ + "F2 (제2포먼트) : " + fixed$(f2, 2) + " Hz" + nl$
+nb$ = nb$ + t$ + "F3 (제3포먼트) : " + fixed$(f3, 2) + " Hz" + nl$
+nb$ = nb$ + nl$
+
+nb$ = nb$ + "[스크립트] 5. 스펙트럼 분석" + nl$
+nb$ = nb$ + "------------------------------------------------------------" + nl$
+nb$ = nb$ + t$ + "spectrum    = To Spectrum: " + q$ + "yes" + q$ + nl$
+nb$ = nb$ + t$ + "band_energy = Get band energy: 430, 450" + nl$
+nb$ = nb$ + nl$
+
+nb$ = nb$ + "[출력] 5. 스펙트럼 결과" + nl$
+nb$ = nb$ + "------------------------------------------------------------" + nl$
+nb$ = nb$ + t$ + "430-450 Hz 밴드 에너지 : " + fixed$(band_energy, 6) + " Pa²·s" + nl$
+nb$ = nb$ + t$ + "(440 Hz 단일 성분에 에너지 집중 — 순수 사인파 확인)" + nl$
+nb$ = nb$ + nl$
+
+nb$ = nb$ + "[텍스트] 6. 결론" + nl$
+nb$ = nb$ + "------------------------------------------------------------" + nl$
+nb$ = nb$ + "· F0 표준편차 ≈ 0  →  완벽한 주기 신호" + nl$
+nb$ = nb$ + "· 스펙트럼 에너지가 440 Hz에 집중  →  배음 없는 순수 사인파" + nl$
+nb$ = nb$ + "· 포먼트 값은 사인파 특성상 해석 의미가 제한됨" + nl$
+nb$ = nb$ + nl$
+
+nb$ = nb$ + "============================================================" + nl$
+nb$ = nb$ + "  Praat " + praatVersion$ + "  |  분석 완료" + nl$
+nb$ = nb$ + "============================================================" + nl$
+
+writeInfoLine: nb$
+writeFileLine: output_file$, nb$

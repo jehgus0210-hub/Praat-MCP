@@ -1,0 +1,47 @@
+# 기존 세팅 vs 표준 세팅 CPP/CPPS 값 비교
+form Parameter Comparison
+    sentence inputSound dummy
+    sentence outputFile dummy
+endform
+
+audioDir$ = "C:\Users\user\Desktop\mcp-praat\audio"
+pitchFloor   = 60
+pitchCeiling = 330
+
+wavList = Create Strings as file list: "wavList", audioDir$ + "\*.wav"
+nWavs = Get number of strings
+
+writeFileLine: outputFile$, "파일명,기존_CPPs(yes/0.02/0.0005),표준_CPPs(no/0.01/0.001),차이,기존_CPP(yes/0.02/0.0),표준_CPP(no/0.01/0.0),차이"
+
+for i from 1 to min(nWavs, 10)
+    selectObject: wavList
+    fileName$ = Get string: i
+    filePath$ = audioDir$ + "\" + fileName$
+
+    sndObj = Read from file: filePath$
+    selectObject: sndObj
+    pcObj = To PowerCepstrogram: pitchFloor, 0.002, 5000, 50
+
+    # 기존 세팅 (잘못된)
+    selectObject: pcObj
+    old_cpps = Get CPPS: "yes", 0.02, 0.0005, pitchFloor, pitchCeiling, 0.05, "Parabolic", 0.001, 0, "Exponential decay", "Robust"
+    selectObject: pcObj
+    old_cpp  = Get CPPS: "yes", 0.02, 0.0, pitchFloor, pitchCeiling, 0.05, "Parabolic", 0.001, 0, "Exponential decay", "Robust"
+
+    # 표준 세팅 (Watts/Buckley)
+    selectObject: pcObj
+    new_cpps = Get CPPS: "no", 0.01, 0.001, pitchFloor, pitchCeiling, 0.05, "Parabolic", 0.001, 0, "Exponential decay", "Robust"
+    selectObject: pcObj
+    new_cpp  = Get CPPS: "no", 0.01, 0.0, pitchFloor, pitchCeiling, 0.05, "Parabolic", 0.001, 0, "Exponential decay", "Robust"
+
+    removeObject: pcObj
+    removeObject: sndObj
+
+    diff_cpps = old_cpps - new_cpps
+    diff_cpp  = old_cpp  - new_cpp
+
+    appendFileLine: outputFile$, fileName$, ",", fixed$(old_cpps,4), ",", fixed$(new_cpps,4), ",", fixed$(diff_cpps,4), ",", fixed$(old_cpp,4), ",", fixed$(new_cpp,4), ",", fixed$(diff_cpp,4)
+endfor
+
+removeObject: wavList
+appendFileLine: outputFile$, "완료"

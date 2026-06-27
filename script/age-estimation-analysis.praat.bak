@@ -1,0 +1,185 @@
+# Age Estimation Analysis Script
+# Extracts acoustic features for age estimation
+
+form Age Estimation Analysis
+    sentence Audio_file
+    sentence Output_file
+endform
+
+# Open sound file
+sound = Read from file: audio_file$
+
+# Get basic info
+duration = Get total duration
+sampling_freq = Get sampling frequency
+
+# === 1. Pitch Analysis (F0) ===
+selectObject: sound
+pitch = To Pitch: 0.0, 75, 600
+mean_f0 = Get mean: 0, 0, "Hertz"
+min_f0 = Get minimum: 0, 0, "Hertz", "Parabolic"
+max_f0 = Get maximum: 0, 0, "Hertz", "Parabolic"
+stdev_f0 = Get standard deviation: 0, 0, "Hertz"
+
+# === 2. Formant Analysis ===
+selectObject: sound
+formant = To Formant (burg): 0, 5, 5500, 0.025, 50
+mean_f1 = Get mean: 1, 0, 0, "Hertz"
+mean_f2 = Get mean: 2, 0, 0, "Hertz"
+mean_f3 = Get mean: 3, 0, 0, "Hertz"
+
+# === 3. Jitter and Shimmer ===
+selectObject: sound
+pointProcess = To PointProcess (periodic, cc): 75, 600
+
+# Select both sound and point process for jitter/shimmer
+selectObject: sound
+plusObject: pointProcess
+jitter_local = Get jitter (local): 0, 0, 0.0001, 0.02, 1.3
+shimmer_local = Get shimmer (local): 0, 0, 0.0001, 0.02, 1.3, 1.6
+
+# === 4. Harmonics-to-Noise Ratio ===
+selectObject: sound
+harmonicity = To Harmonicity (cc): 0.01, 75, 0.1, 1.0
+mean_hnr = Get mean: 0, 0
+
+# === 5. Intensity Analysis ===
+selectObject: sound
+intensity = To Intensity: 75, 0, "yes"
+mean_intensity = Get mean: 0, 0, "energy"
+stdev_intensity = Get standard deviation: 0, 0
+
+# === 6. Speaking Rate Estimation ===
+selectObject: sound
+syllable_nuclei = To Intensity: 100, 0, "yes"
+syllable_nuclei_pp = To IntensityTier (peaks)
+num_peaks = Get number of points
+speaking_rate = num_peaks / duration
+
+# === Age Estimation Logic ===
+# Based on acoustic features
+age_score = 0
+confidence = "Medium"
+
+# F0 analysis (pitch gets higher in older males, lower in older females)
+if mean_f0 > 200
+    gender$ = "Female"
+    if mean_f0 < 180
+        age_score = age_score + 30
+    elsif mean_f0 > 220
+        age_score = age_score + 20
+    else
+        age_score = age_score + 10
+    endif
+elsif mean_f0 < 200 and mean_f0 > 100
+    gender$ = "Female/Male"
+    age_score = age_score + 15
+else
+    gender$ = "Male"
+    if mean_f0 > 130
+        age_score = age_score + 30
+    elsif mean_f0 < 110
+        age_score = age_score + 10
+    else
+        age_score = age_score + 15
+    endif
+endif
+
+# Jitter/Shimmer analysis (increases with age)
+if jitter_local > 0.01
+    age_score = age_score + 25
+elsif jitter_local > 0.005
+    age_score = age_score + 15
+else
+    age_score = age_score + 5
+endif
+
+if shimmer_local > 0.06
+    age_score = age_score + 25
+elsif shimmer_local > 0.03
+    age_score = age_score + 15
+else
+    age_score = age_score + 5
+endif
+
+# HNR analysis (decreases with age)
+if mean_hnr < 12
+    age_score = age_score + 25
+elsif mean_hnr < 18
+    age_score = age_score + 15
+else
+    age_score = age_score + 5
+endif
+
+# Estimate age range
+if age_score < 30
+    age_range$ = "20-35 years (Young Adult)"
+    confidence$ = "Medium"
+elsif age_score < 50
+    age_range$ = "35-50 years (Middle Age)"
+    confidence$ = "Medium"
+elsif age_score < 70
+    age_range$ = "50-65 years (Mature Adult)"
+    confidence$ = "Medium-High"
+else
+    age_range$ = "65+ years (Senior)"
+    confidence$ = "Medium-High"
+endif
+
+# === Output Results ===
+writeFileLine: output_file$, "=== AGE ESTIMATION ANALYSIS ==="
+appendFileLine: output_file$, ""
+appendFileLine: output_file$, "Audio File: ", audio_file$
+appendFileLine: output_file$, "Duration: ", fixed$(duration, 2), " seconds"
+appendFileLine: output_file$, ""
+appendFileLine: output_file$, "=== ACOUSTIC FEATURES ==="
+appendFileLine: output_file$, ""
+appendFileLine: output_file$, "1. PITCH (F0) ANALYSIS:"
+appendFileLine: output_file$, "   Mean F0: ", fixed$(mean_f0, 2), " Hz"
+appendFileLine: output_file$, "   Min F0: ", fixed$(min_f0, 2), " Hz"
+appendFileLine: output_file$, "   Max F0: ", fixed$(max_f0, 2), " Hz"
+appendFileLine: output_file$, "   Std Dev: ", fixed$(stdev_f0, 2), " Hz"
+appendFileLine: output_file$, "   Estimated Gender: ", gender$
+appendFileLine: output_file$, ""
+appendFileLine: output_file$, "2. FORMANT FREQUENCIES:"
+appendFileLine: output_file$, "   F1: ", fixed$(mean_f1, 2), " Hz"
+appendFileLine: output_file$, "   F2: ", fixed$(mean_f2, 2), " Hz"
+appendFileLine: output_file$, "   F3: ", fixed$(mean_f3, 2), " Hz"
+appendFileLine: output_file$, ""
+appendFileLine: output_file$, "3. VOICE QUALITY:"
+appendFileLine: output_file$, "   Jitter (local): ", fixed$(jitter_local * 100, 3), " %"
+appendFileLine: output_file$, "   Shimmer (local): ", fixed$(shimmer_local * 100, 3), " %"
+appendFileLine: output_file$, "   HNR: ", fixed$(mean_hnr, 2), " dB"
+appendFileLine: output_file$, ""
+appendFileLine: output_file$, "4. INTENSITY:"
+appendFileLine: output_file$, "   Mean: ", fixed$(mean_intensity, 2), " dB"
+appendFileLine: output_file$, "   Std Dev: ", fixed$(stdev_intensity, 2), " dB"
+appendFileLine: output_file$, ""
+appendFileLine: output_file$, "5. SPEAKING RATE:"
+appendFileLine: output_file$, "   Syllables/second: ", fixed$(speaking_rate, 2)
+appendFileLine: output_file$, ""
+appendFileLine: output_file$, "=== AGE ESTIMATION ==="
+appendFileLine: output_file$, ""
+appendFileLine: output_file$, "Estimated Age Range: ", age_range$
+appendFileLine: output_file$, "Confidence Level: ", confidence$
+appendFileLine: output_file$, "Age Score: ", age_score, " / 100"
+appendFileLine: output_file$, ""
+appendFileLine: output_file$, "=== INTERPRETATION NOTES ==="
+appendFileLine: output_file$, ""
+if jitter_local > 0.01 or shimmer_local > 0.06
+    appendFileLine: output_file$, "- High jitter/shimmer detected: suggests vocal instability (common in older speakers)"
+endif
+if mean_hnr < 15
+    appendFileLine: output_file$, "- Low HNR: indicates more noise in voice (aging indicator)"
+endif
+if stdev_f0 > 50
+    appendFileLine: output_file$, "- High pitch variability: may indicate expressive speech or vocal control"
+endif
+appendFileLine: output_file$, ""
+appendFileLine: output_file$, "Note: This is an automated estimation based on acoustic features."
+appendFileLine: output_file$, "Accuracy depends on recording quality, speaking style, and individual variation."
+
+# Clean up
+removeObject: sound, pitch, formant, pointProcess, harmonicity, intensity, syllable_nuclei, syllable_nuclei_pp
+
+appendInfoLine: "Analysis complete! Results saved to: ", output_file$

@@ -1,0 +1,249 @@
+# ============================================================
+# 20대 남성 음성 강도 연습 미니게임
+# Voice Intensity Training Mini-Game for Men in Their 20s
+#
+# [실행 방법]
+#   방법 1: Praat > Open Praat script > 이 파일 열기 > Run
+#   방법 2: 이 파일을 mcp-praat\script\ 폴더에 복사
+#           → MCP에서 script_id "voice-intensity-game" 으로 관리
+#
+# [목표]
+#   마이크에 대고 자연스럽게 말하여 60 ~ 75 dB 구간 유지
+#   총 10라운드, 각 3초 녹음, 최고점 200점
+# ============================================================
+
+# --- 게임 설정 ---
+totalRounds = 10
+targetMin    = 60
+targetMax    = 75
+recordDur    = 3
+
+score      = 0
+streak     = 0
+bestStreak = 0
+
+# ---- 인트로 화면 ----
+beginPause: "목소리 강도 트레이닝  [20대 남성]"
+    comment: "========================================================"
+    comment: "           목소리 강도 트레이닝 미니게임"
+    comment: "========================================================"
+    comment: ""
+    comment: "  20대 남성의 적정 발화 강도를 Praat으로 측정·연습합니다."
+    comment: ""
+    comment: "  목표 구간 : 60 ~ 75 dB   (자연스러운 대화 강도)"
+    comment: "  녹음 시간 : 3초 / 라운드"
+    comment: "  총 라운드 : 10 라운드  (최고 200점)"
+    comment: ""
+    comment: "  점수 기준"
+    comment: "    [O]  60 ~ 75 dB  →  +20점   목표 구간 완벽!"
+    comment: "    [△]  55 ~ 59 dB  →   +5점   조금 작음"
+    comment: "    [△]  76 ~ 85 dB  →   +5점   조금 큼"
+    comment: "    [X]  ~ 54 dB     →    0점   너무 작음"
+    comment: "    [X]  86 dB ~     →    0점   너무 큼"
+    comment: ""
+    comment: "  목표 구간 연속 성공 시 보너스 점수 지급!"
+    comment: "    3연속: +5 / 4연속: +10 / 5연속: +15 ..."
+    comment: ""
+    comment: "  준비되면 [시작!]을 클릭하세요."
+    comment: ""
+btn = endPause: "취소", "시작!", 2
+if btn = 1
+    exit "게임을 취소했습니다."
+endif
+
+clearinfo
+appendInfoLine: "========================================================"
+appendInfoLine: " 목소리 강도 트레이닝  [20대 남성]  게임 시작"
+appendInfoLine: "========================================================"
+appendInfoLine: ""
+
+# ---- 게임 루프 ----
+for round from 1 to totalRounds
+
+    # 연속 보너스 안내 메시지
+    if streak >= 3
+        streakMsg$ = "  ★ 연속 " + string$ (streak) + "회 성공 중!"
+    elsif streak = 2
+        streakMsg$ = "  ▷ 한 번 더 성공하면 연속 보너스!"
+    else
+        streakMsg$ = ""
+    endif
+
+    # 라운드 준비 팝업
+    beginPause: "라운드  " + string$ (round) + "  /  " + string$ (totalRounds)
+        comment: "  현재 점수 : " + string$ (score) + "점" + streakMsg$
+        comment: ""
+        comment: "  마이크에 대고 3초간 자연스럽게 말해보세요."
+        comment: "  예시: '안녕하세요, 오늘 날씨가 정말 좋네요.'"
+        comment: "       '저는 평소에 이런 크기로 말합니다.'"
+        comment: ""
+        comment: "  목표 강도 : 60 ~ 75 dB"
+        comment: ""
+        comment: "  [녹음 시작!] 클릭 즉시 3초 녹음이 시작됩니다."
+        comment: ""
+    btn2 = endPause: "게임 종료", "녹음 시작!", 2
+    if btn2 = 1
+        goto GAME_END
+    endif
+
+    # ---- 녹음 ----
+    nocheck selectObject: 0
+    Record Sound (fixed time): "Microphone", 1, 0.01, recordDur
+    sndId = selected ("Sound")
+    Rename: "game_round_" + string$ (round)
+
+    # ---- 강도 분석 ----
+    selectObject: sndId
+    intId = To Intensity: 75, 0.01, "yes"
+    tStart = Get start time
+    tEnd   = Get end time
+    meanDb = Get mean: tStart, tEnd, "energy"
+    removeObject: intId
+    removeObject: sndId
+
+    meanDb_r = round (meanDb * 10) / 10
+
+    # ---- 구간 판정 ----
+    if meanDb < 50
+        result$   = "[X]  너무 작음"
+        feedback$ = "소리가 너무 작아요. 배에서 소리가 나오는 느낌으로 말해보세요!"
+        bar$      = "|          |   << 미달"
+        points    = 0
+        streak    = 0
+    elsif meanDb < 55
+        result$   = "[X]  많이 작음"
+        feedback$ = "아직 작습니다. 입을 더 크게 열고 말해보세요!"
+        bar$      = "|=         |    < 미달"
+        points    = 0
+        streak    = 0
+    elsif meanDb < 60
+        result$   = "[△]  조금 작음"
+        feedback$ = "거의 다 왔어요! 조금만 더 힘을 실어서 말해보세요."
+        bar$      = "|===       |   근접"
+        points    = 5
+        streak    = 0
+    elsif meanDb <= 75
+        result$   = "[O]  적정 구간!"
+        feedback$ = "완벽합니다! 자연스럽고 명확한 발화 강도예요."
+        bar$      = "|  ======  |  ★ 목표!"
+        points    = 20
+        streak    = streak + 1
+        if streak > bestStreak
+            bestStreak = streak
+        endif
+    elsif meanDb <= 80
+        result$   = "[△]  조금 큼"
+        feedback$ = "살짝 큽니다. 긴장을 풀고 조금 편하게 말해보세요."
+        bar$      = "|       ===|   > 초과"
+        points    = 5
+        streak    = 0
+    elsif meanDb <= 85
+        result$   = "[△]  많이 큼"
+        feedback$ = "목소리가 많이 크네요. 힘을 빼고 차분하게 말해봐요."
+        bar$      = "|        ==|   >> 초과"
+        points    = 5
+        streak    = 0
+    else
+        result$   = "[X]  너무 큼"
+        feedback$ = "너무 큽니다! 편안하고 자연스러운 크기로 낮춰보세요."
+        bar$      = "|         =|  >>> 초과"
+        points    = 0
+        streak    = 0
+    endif
+
+    # ---- 연속 보너스 계산 ----
+    bonusPoints = 0
+    if streak >= 3
+        bonusPoints = (streak - 2) * 5
+        points      = points + bonusPoints
+        bonusMsg$   = newline$ + "  ★ 연속 보너스  : +" + string$ (bonusPoints) + "점  (" + string$ (streak) + "연속 성공!)"
+    else
+        bonusMsg$ = ""
+    endif
+
+    score = score + points
+
+    # 콘솔 로그
+    appendInfoLine: "  라운드 " + string$ (round) + "  |  " + fixed$ (meanDb_r, 1) + " dB  |  " + result$ + "  |  +" + string$ (points) + "점  |  누계 " + string$ (score) + "점"
+
+    # ---- 결과 팝업 ----
+    if round < totalRounds
+        beginPause: "결과  — 라운드 " + string$ (round)
+            comment: "  측정 음량  :  " + fixed$ (meanDb_r, 1) + " dB"
+            comment: ""
+            comment: "  " + bar$
+            comment: "  결 과  :  " + result$
+            comment: ""
+            comment: "  " + feedback$ + bonusMsg$
+            comment: ""
+            comment: "  이번 획득  : +" + string$ (points) + "점"
+            comment: "  현재 총점  :  " + string$ (score) + "점"
+            comment: "  연속 성공  :  " + string$ (streak) + "회"
+            comment: ""
+        btn3 = endPause: "게임 종료", "다음 라운드", 2
+        if btn3 = 1
+            goto GAME_END
+        endif
+    else
+        beginPause: "결과  — 마지막 라운드"
+            comment: "  측정 음량  :  " + fixed$ (meanDb_r, 1) + " dB"
+            comment: ""
+            comment: "  " + bar$
+            comment: "  결 과  :  " + result$
+            comment: ""
+            comment: "  " + feedback$ + bonusMsg$
+            comment: ""
+            comment: "  이번 획득  : +" + string$ (points) + "점"
+            comment: "  현재 총점  :  " + string$ (score) + "점"
+            comment: ""
+        endPause: "최종 결과 보기", 1
+    endif
+
+endfor
+
+# ---- 최종 결과 ----
+label GAME_END
+
+maxScore = totalRounds * 20
+
+if score >= 180
+    grade$ = "S   압도적인 발화 강도 마스터!"
+elsif score >= 140
+    grade$ = "A   훌륭한 발화 강도 실력입니다!"
+elsif score >= 100
+    grade$ = "B   좋아요! 조금만 더 연습하면 완벽해요."
+elsif score >= 60
+    grade$ = "C   더 연습이 필요해요. 다시 도전해봐요!"
+else
+    grade$ = "D   기초부터 차근차근 연습해봐요."
+endif
+
+appendInfoLine: ""
+appendInfoLine: "========================================================"
+appendInfoLine: " 게임 종료 — 최종 결과"
+appendInfoLine: "========================================================"
+appendInfoLine: "  최종 점수  : " + string$ (score) + " / " + string$ (maxScore) + "점"
+appendInfoLine: "  등 급      : " + grade$
+appendInfoLine: "  최고 연속  : " + string$ (bestStreak) + "회"
+appendInfoLine: "========================================================"
+
+beginPause: "게임 종료 — 최종 결과"
+    comment: "========================================================"
+    comment: "                  게임 종료 — 최종 결과"
+    comment: "========================================================"
+    comment: ""
+    comment: "  최종 점수 : " + string$ (score) + "  /  " + string$ (maxScore) + "점"
+    comment: ""
+    comment: "  등  급 : " + grade$
+    comment: ""
+    comment: "  최고 연속 성공 : " + string$ (bestStreak) + "회"
+    comment: ""
+    comment: "========================================================"
+    comment: "  20대 남성 적정 발화 강도:  60 ~ 75 dB"
+    comment: ""
+    comment: "  이 범위를 유지하면 상대방이 편안하게 들을 수 있고"
+    comment: "  명확하고 신뢰감 있는 인상을 줄 수 있습니다."
+    comment: ""
+    comment: "  매일 연습해서 S등급에 도전해보세요!"
+    comment: "========================================================"
+endPause: "확인", 1

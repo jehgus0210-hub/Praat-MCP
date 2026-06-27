@@ -1,0 +1,45 @@
+
+# ==========================================
+# 폴더 구조 탐색 스크립트
+# 후보 폴더 및 파일명을 조합하여 로드 시도
+# Arguments:
+#   1) inputSound$   : (unused)
+#   2) outputFile$   : result txt path
+# ==========================================
+
+form Folder Search
+    sentence inputSound dummy
+    sentence outputFile result
+endform
+
+base$ = "C:/Users/user/Desktop/mcp-praat/"
+
+writeFileLine: outputFile$, "=== 폴더/파일 탐색 ==="
+appendFileLine: outputFile$, "기본 경로: ", base$
+appendFileLine: outputFile$, ""
+appendFileLine: outputFile$, "후보 폴더: audio, Audio, wav, WAV, sounds, input, recordings, sample, test, data"
+appendFileLine: outputFile$, "후보 파일: test, sample, audio, recording, voice, speech, input, sound, hello"
+appendFileLine: outputFile$, ""
+appendFileLine: outputFile$, "탐색 시작..."
+appendFileLine: outputFile$, ""
+
+# 탐색 결과를 위해 직접 경로 조합 후 로드 시도
+# Praat에서는 에러 캡쳐가 불가능하므로,
+# 스크립트 자체가 실패하면 에러 메시지에서 어떤 경로를 시도했는지 확인 가능
+
+# 먼저 폴더가 존재하는지 확인하기 위해 해당 폴더 내 임의의 파일 로드 시도
+# 실패하면 다음 폴더로 넘어감 (각 시도를 별도 스크립트로 하는 것이 유일한 방법)
+
+# 이번에는 단순히 결과 파일에 탐색 정보를 기록하고,
+# 실제 로드는 폴더별로 순차적으로 시도
+appendFileLine: outputFile$, "→ 아래 폴더명들을 순차적으로 시도합니다:"
+appendFileLine: outputFile$, "  1. audio"
+appendFileLine: outputFile$, "  2. Audio"  
+appendFileLine: outputFile$, "  3. wav"
+appendFileLine: outputFile$, "  4. sounds"
+appendFileLine: outputFile$, "  5. input"
+appendFileLine: outputFile$, "  6. recordings"
+appendFileLine: outputFile$, "  7. sample"
+appendFileLine: outputFile$, "  8. test"
+appendFileLine: outputFile$, "  9. data"
+appendFileLine: outputFile$, " 10. (루트 폴더 직접)"

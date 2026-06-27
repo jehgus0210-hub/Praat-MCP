@@ -1,0 +1,34 @@
+
+# 실제 실행용: 사인파 생성 및 분석 (오디오 파일 불필요)
+
+frequency = 440
+duration = 1.0
+sampleRate = 44100
+
+sound = Create Sound from formula: "sineWave", 1, 0, duration, sampleRate,
+    ... "0.5 * sin(2 * pi * frequency * x)"
+
+dur = Get total duration
+intensity_val = Get intensity (dB)
+
+pitch = To Pitch: 0, 75, 600
+mean_pitch = Get mean: 0, 0, "Hertz"
+
+selectObject: sound
+formant = To Formant (burg): 0, 5, 5500, 0.025, 50
+f1 = Get mean: 1, 0, 0, "Hertz"
+f2 = Get mean: 2, 0, 0, "Hertz"
+f3 = Get mean: 3, 0, 0, "Hertz"
+
+writeInfoLine: "=== 음성 신호 기본 정보 ==="
+appendInfoLine: "주파수: " + string$(frequency) + " Hz (A4)"
+appendInfoLine: "지속 시간: " + string$(dur) + " 초"
+appendInfoLine: "강도: " + string$(intensity_val) + " dB"
+appendInfoLine: ""
+appendInfoLine: "=== 피치 분석 ==="
+appendInfoLine: "평균 F0: " + string$(mean_pitch) + " Hz"
+appendInfoLine: ""
+appendInfoLine: "=== 포먼트 분석 ==="
+appendInfoLine: "F1: " + string$(f1) + " Hz"
+appendInfoLine: "F2: " + string$(f2) + " Hz"
+appendInfoLine: "F3: " + string$(f3) + " Hz"
