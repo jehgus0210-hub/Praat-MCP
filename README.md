@@ -171,3 +171,23 @@ CPPs 배치 분석을 위한 Praat 스크립트를 작성해줘.
 ```
 
 결과는 Claude가 보여주고, 동시에 `result` 폴더에 `.txt` 파일로 저장됩니다.
+
+## How to Cite
+
+If you use **Praat-MCP** in your research or pipeline, please cite it as:
+
+### APA (7th Edition)
+> Jeong, D. H. (2026). *Praat-MCP* (Version 1.0.0) [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.20965380
+
+### BibTeX
+```bibtex
+@software{praat_mcp_2026,
+  author       = {Jeong, Do Hyeon},
+  title        = {Praat-MCP},
+  month        = jun,
+  year         = 2026,
+  publisher    = {Zenodo},
+  version      = {v1.0.0},
+  doi          = {10.5281/zenodo.20965380},
+  url          = {[https://doi.org/10.5281/zenodo.20965380](https://doi.org/10.5281/zenodo.20965380)}
+}
