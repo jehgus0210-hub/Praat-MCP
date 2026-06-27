@@ -191,3 +191,6 @@ If you use **Praat-MCP** in your research or pipeline, please cite it as:
   doi          = {10.5281/zenodo.20965380},
   url          = {[https://doi.org/10.5281/zenodo.20965380](https://doi.org/10.5281/zenodo.20965380)}
 }
+
+## Disclaimer
+*Praat* is a phonetics software developed by Paul Boersma and David Weenink at the University of Amsterdam. **Praat-MCP** is an independent, third-party analysis pipeline and is not officially affiliated with or endorsed by the original Praat authors.
